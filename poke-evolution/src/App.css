@@ -1,0 +1,68 @@
+/* src/App.css */
+.search-container {
+    padding: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    border-radius: 0 0 12px 0;
+    box-shadow: var(--card-shadow);
+}
+
+.search-container h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+}
+
+.search-input {
+    padding: 10px 15px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+}
+
+.search-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-button:hover {
+    background-color: #1ed760;
+}
+
+.random-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    background-color: #ffcb05; /* 포켓몬 노란색 */
+    color: #2e6db4; /* 포켓몬 파란색 */
+    border: 2px solid #2e6db4;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.random-button:hover {
+    background-color: #e6b704;
+    transform: translateY(-2px);
+}

@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+:root {
+    --background-color: #f8f9fa;
+    --text-color: #212529;
+    --primary-color: #1DB954; /* Spotify Green for fun */
+    --card-bg: #ffffff;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    margin: 0;
+    font-family: 'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
