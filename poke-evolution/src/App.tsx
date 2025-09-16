@@ -82,8 +82,7 @@ function App() {
             const speciesRes = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
             const pokemonRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
 
-            const cryUrl = `http://localhost:3001/api/cries/${pokemonRes.data.id}`;
-
+            const cryUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/cries/${pokemonRes.data.id}.ogg`;
             const findKoreanName = (data: any, nameKey: string) => data.names.find((n: any) => n.language.name === 'ko')?.name || nameKey;
             const typesPromises = pokemonRes.data.types.map((t: any) => axios.get(t.type.url));
             const abilitiesPromises = pokemonRes.data.abilities.map((a: any) => axios.get(a.ability.url));
