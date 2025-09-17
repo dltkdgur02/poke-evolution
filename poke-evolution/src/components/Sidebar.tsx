@@ -6,6 +6,7 @@ type PokemonDetails = {
     koreanName: string; imageUrl: string; types: { type: { name: string; koreanName: string } }[];
     height: number; weight: number; abilities: { ability: { name: string; koreanName: string } }[];
     cryUrl: string | null;
+    weaknesses: string[];
 };
 interface SidebarProps {
     pokemon: PokemonDetails | null;
@@ -20,10 +21,7 @@ function Sidebar({ pokemon, isOpen, onClose }: SidebarProps) {
 
     const playSound = () => {
         if (pokemon.cryUrl) {
-            console.log('재생 시도하는 오디오 주소:', pokemon.cryUrl); // ⬅️ 이 줄을 추가!
-
             new Audio(pokemon.cryUrl).play();
-
         }
     };
 
@@ -43,8 +41,6 @@ function Sidebar({ pokemon, isOpen, onClose }: SidebarProps) {
         >
             <div className="sidebar-header">
                 <h2>{pokemon.koreanName}</h2>
-                {/* --- 바로 이 부분입니다! --- */}
-                {/* cryUrl 데이터가 있을 때만 스피커 버튼을 보여줍니다. */}
                 {pokemon.cryUrl && (
                     <button onClick={playSound} className="sound-btn">🔊</button>
                 )}
@@ -52,12 +48,21 @@ function Sidebar({ pokemon, isOpen, onClose }: SidebarProps) {
             </div>
             <div className="sidebar-content">
                 <img src={pokemon.imageUrl} alt={pokemon.koreanName} />
+
                 <div className="info-section">
                     <h3>타입</h3>
                     <div className="info-item">
                         <span>{pokemon.types.map(t => t.type.koreanName).join(', ')}</span>
                     </div>
                 </div>
+
+                <div className="info-section">
+                    <h3>약점 (2배 데미지)</h3>
+                    <div className="info-item weaknesses">
+                        <span>{pokemon.weaknesses.join(', ')}</span>
+                    </div>
+                </div>
+
                 <div className="info-section">
                     <h3>특성</h3>
                     {pokemon.abilities.map(({ ability }) => (
@@ -66,6 +71,7 @@ function Sidebar({ pokemon, isOpen, onClose }: SidebarProps) {
                         </div>
                     ))}
                 </div>
+
                 <div className="info-section">
                     <h3>신체 정보</h3>
                     <div className="info-item">
