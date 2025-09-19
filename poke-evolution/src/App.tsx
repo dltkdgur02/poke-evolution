@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
-import { parseEvolutionChain, type EvolutionTreeNode } from './utils'; // formatEvolutionDetails 삭제
+import { parseEvolutionChain, type EvolutionTreeNode } from './utils';
 import { ReactFlowProvider, type NodeProps } from 'reactflow';
 import { AnimatePresence } from 'framer-motion';
 import 'reactflow/dist/style.css';
@@ -12,6 +12,7 @@ import CustomEdge from './components/CustomEdge';
 import koreanNameMap from './koreanNameMap.json';
 import './App.css';
 import dagre from 'dagre';
+
 // --- 헬퍼 함수들을 App 컴포넌트 밖으로 이동하여 정리 ---
 const findKoreanName = (speciesData: any, fallbackName: string) => {
     return speciesData.names.find((n: any) => n.language.name === 'ko')?.name || fallbackName;
