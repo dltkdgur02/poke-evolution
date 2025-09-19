@@ -5,7 +5,6 @@ import './Sidebar.css';
 type PokemonDetails = {
     koreanName: string; imageUrl: string; types: { type: { name: string; koreanName: string } }[];
     height: number; weight: number; abilities: { ability: { name: string; koreanName: string } }[];
-    cryUrl: string | null;
     weaknesses: string[];
 };
 interface SidebarProps {
@@ -19,11 +18,6 @@ function Sidebar({ pokemon, isOpen, onClose }: SidebarProps) {
         return null;
     }
 
-    const playSound = () => {
-        if (pokemon.cryUrl) {
-            new Audio(pokemon.cryUrl).play();
-        }
-    };
 
     const sidebarVariants = {
         hidden: { x: '100%' },
@@ -41,9 +35,6 @@ function Sidebar({ pokemon, isOpen, onClose }: SidebarProps) {
         >
             <div className="sidebar-header">
                 <h2>{pokemon.koreanName}</h2>
-                {pokemon.cryUrl && (
-                    <button onClick={playSound} className="sound-btn">🔊</button>
-                )}
                 <button onClick={onClose} className="close-btn">&times;</button>
             </div>
             <div className="sidebar-content">
