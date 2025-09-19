@@ -3,7 +3,7 @@
 :root {
     --background-color: #f8f9fa;
     --text-color: #212529;
-    --primary-color: #1DB954; /* Spotify Green for fun */
+    --primary-color: #1DB954;
     --card-bg: #ffffff;
     --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
