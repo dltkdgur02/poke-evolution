@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { parseEvolutionChain, formatEvolutionDetails, type EvolutionTreeNode } from './utils';import axios from 'axios';
+import axios from 'axios';
+import { parseEvolutionChain, type EvolutionTreeNode } from './utils'; // formatEvolutionDetails 삭제
 import { ReactFlowProvider, type NodeProps } from 'reactflow';
 import { AnimatePresence } from 'framer-motion';
 import 'reactflow/dist/style.css';
@@ -9,10 +10,8 @@ import WelcomeScreen from './components/WelcomeScreen';
 import FlowCanvas from './components/FlowCanvas';
 import CustomEdge from './components/CustomEdge';
 import koreanNameMap from './koreanNameMap.json';
-import allTypeNames from './allTypeNames';
 import './App.css';
 import dagre from 'dagre';
-
 // --- 헬퍼 함수들을 App 컴포넌트 밖으로 이동하여 정리 ---
 const findKoreanName = (speciesData: any, fallbackName: string) => {
     return speciesData.names.find((n: any) => n.language.name === 'ko')?.name || fallbackName;
@@ -43,7 +42,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => 
 type PokemonType = { type: { name: string; url: string } };
 type NodeData = { label: string; imageUrl?: string; defaultImageUrl?: string; shinyImageUrl?: string; types?: PokemonType[] };
 type Node = { id: string; type?: string; position: { x: number; y: number }; data: NodeData; };
-type Edge = { id: string; source: string; target: string; type?: 'custom'; data?: any; animated?: boolean; };
+type Edge = { id: string; source: string; target: string; type?: 'custom'; data?: any; };
 type PokemonDetails = {
     koreanName: string;
     forms: { name: string; koreanName: string; url: string; }[];
@@ -60,9 +59,7 @@ const createFlowElementsFromTree = (treeNode: EvolutionTreeNode) => {
                 source: parentName,
                 target: node.name,
                 type: 'custom',
-                data: { details: node.evolutionDetails[0] },
-                // 🔽 여기에 label 속성을 추가하고 formatEvolutionDetails 함수를 사용합니다.
-                label: formatEvolutionDetails(node.evolutionDetails),
+                data: { details: node.evolutionDetails[0] }, // 'label' 속성을 삭제하고 data만 사용합니다.
             });
         }
         node.children.forEach(child => traverse(child, node.name));
