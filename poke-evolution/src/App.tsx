@@ -1,13 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
-import axios from 'axios';
-import { parseEvolutionChain, type EvolutionTreeNode } from './utils';
-import ReactFlow, { MiniMap, Controls, Background, type NodeProps } from 'reactflow';
+import { parseEvolutionChain, formatEvolutionDetails, type EvolutionTreeNode } from './utils';import axios from 'axios';
+import { ReactFlowProvider, type NodeProps } from 'reactflow';
 import { AnimatePresence } from 'framer-motion';
 import 'reactflow/dist/style.css';
 import PokemonNode from './components/PokemonNode';
 import Sidebar from './components/Sidebar';
 import WelcomeScreen from './components/WelcomeScreen';
+import FlowCanvas from './components/FlowCanvas';
+import CustomEdge from './components/CustomEdge';
 import koreanNameMap from './koreanNameMap.json';
+import allTypeNames from './allTypeNames';
 import './App.css';
 import dagre from 'dagre';
 
@@ -16,25 +18,17 @@ const findKoreanName = (speciesData: any, fallbackName: string) => {
     return speciesData.names.find((n: any) => n.language.name === 'ko')?.name || fallbackName;
 };
 
-const formatEvolutionDetails = (details: any[]): string => {
-    if (!details || details.length === 0) return '';
-    const detail = details[0];
-    const trigger = detail.trigger.name.replace('-', ' ');
-    if (trigger === 'level up') {
-        if (!detail.min_level) return trigger;
-        return `Lv. ${detail.min_level}`;
-    }
-    if (trigger === 'use item') return `Use ${detail.item.name.replace('-', ' ')}`;
-    if (trigger === 'trade') return 'Trade';
-    return trigger;
-};
-
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 const nodeWidth = 200;
 const nodeHeight = 200;
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => {
-    dagreGraph.setGraph({ rankdir: direction });
+    // 🔽 이 부분에 ranksep과 nodesep 옵션을 추가합니다.
+    dagreGraph.setGraph({
+        rankdir: direction,
+        ranksep: 150, // 레벨 간의 수평 간격 (기본값 50)
+        nodesep: 50,  // 같은 레벨의 노드 간 수직 간격 (기본값 50)
+    });
     nodes.forEach((node) => dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight }));
     edges.forEach((edge) => dagreGraph.setEdge(edge.source, edge.target));
     dagre.layout(dagreGraph);
@@ -49,11 +43,10 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => 
 type PokemonType = { type: { name: string; url: string } };
 type NodeData = { label: string; imageUrl?: string; defaultImageUrl?: string; shinyImageUrl?: string; types?: PokemonType[] };
 type Node = { id: string; type?: string; position: { x: number; y: number }; data: NodeData; };
-type Edge = { id: string; source: string; target: string; animated: boolean; label?: string; labelStyle?: object; labelBgStyle?: object; };
+type Edge = { id: string; source: string; target: string; type?: 'custom'; data?: any; animated?: boolean; };
 type PokemonDetails = {
-    koreanName: string; defaultImageUrl: string; shinyImageUrl: string; imageUrl: string; types: { type: { name: string; koreanName: string } }[];
-    height: number; weight: number; abilities: { ability: { name: string; koreanName: string } }[];
-    cryUrl: string | null; weaknesses: string[];
+    koreanName: string;
+    forms: { name: string; koreanName: string; url: string; }[];
 };
 
 const createFlowElementsFromTree = (treeNode: EvolutionTreeNode) => {
@@ -62,9 +55,14 @@ const createFlowElementsFromTree = (treeNode: EvolutionTreeNode) => {
     const traverse = (node: EvolutionTreeNode, parentName: string | null) => {
         nodes.push({ id: node.name, type: 'pokemonNode', position: { x: 0, y: 0 }, data: { label: node.name } });
         if (parentName) {
-            const evolutionLabel = formatEvolutionDetails(node.evolutionDetails);
-            edges.push({ id: `${parentName}-${node.name}`, source: parentName, target: node.name, animated: true, label: evolutionLabel,
-                labelStyle: { fill: '#000', fontWeight: 500 }, labelBgStyle: { fill: 'rgba(255, 255, 255, 0.7)', padding: '5px' },
+            edges.push({
+                id: `${parentName}-${node.name}`,
+                source: parentName,
+                target: node.name,
+                type: 'custom',
+                data: { details: node.evolutionDetails[0] },
+                // 🔽 여기에 label 속성을 추가하고 formatEvolutionDetails 함수를 사용합니다.
+                label: formatEvolutionDetails(node.evolutionDetails),
             });
         }
         node.children.forEach(child => traverse(child, node.name));
@@ -83,12 +81,6 @@ function App() {
     const [isShiny, setIsShiny] = useState(false);
 
     useEffect(() => {
-        if (selectedPokemon) {
-            setSelectedPokemon(prev => {
-                if (!prev) return null;
-                return { ...prev, imageUrl: isShiny ? prev.shinyImageUrl : prev.defaultImageUrl };
-            });
-        }
         setNodes(prevNodes => prevNodes.map(node => ({
             ...node,
             data: { ...node.data, imageUrl: isShiny ? node.data.shinyImageUrl : node.data.defaultImageUrl }
@@ -99,36 +91,27 @@ function App() {
         setIsLoading(true);
         try {
             const speciesRes = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
-            const pokemonRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`);
-            const cryUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/cries/${pokemonRes.data.id}.ogg`;
-            const typesPromises = pokemonRes.data.types.map((t: any) => axios.get(t.type.url));
-            const typesResponses = await Promise.all(typesPromises);
-            const allWeaknesses = new Set<string>();
-            const typeNamesPromises = typesResponses.map(async (res, i) => {
-                const damageRelations = res.data.damage_relations.double_damage_from;
-                const weaknessNamesPromises = damageRelations.map(async (w: any) => {
-                    const weaknessTypeRes = await axios.get(w.url);
-                    return findKoreanName(weaknessTypeRes.data, w.name);
-                });
-                const weaknessNames = await Promise.all(weaknessNamesPromises);
-                weaknessNames.forEach(name => allWeaknesses.add(name));
-                return { type: { name: pokemonRes.data.types[i].type.name, koreanName: findKoreanName(res.data, pokemonRes.data.types[i].type.name) }};
+
+            const formPromises = speciesRes.data.varieties.map(async (variety: any) => {
+                const pokemonRes = await axios.get(variety.pokemon.url);
+                const formDetailsUrl = pokemonRes.data.forms[0].url;
+                const formDetailsRes = await axios.get(formDetailsUrl);
+                const koreanFormName = formDetailsRes.data.form_names.find((n: any) => n.language.name === 'ko')?.name;
+                const finalKoreanName = koreanFormName && koreanFormName.trim() !== ""
+                    ? koreanFormName
+                    : findKoreanName(speciesRes.data, variety.pokemon.name);
+
+                return {
+                    name: variety.pokemon.name,
+                    koreanName: finalKoreanName,
+                    url: variety.pokemon.url,
+                };
             });
-            const typesWithKoreanNames = await Promise.all(typeNamesPromises);
-            const weaknesses = Array.from(allWeaknesses);
-            const abilitiesPromises = pokemonRes.data.abilities.map((a: any) => axios.get(a.ability.url));
-            const abilitiesResponses = await Promise.all(abilitiesPromises);
+            const forms = await Promise.all(formPromises);
 
             const details: PokemonDetails = {
-                koreanName: findKoreanName(speciesRes.data, pokemonRes.data.name),
-                defaultImageUrl: pokemonRes.data.sprites.front_default,
-                shinyImageUrl: pokemonRes.data.sprites.front_shiny,
-                imageUrl: isShiny ? pokemonRes.data.sprites.front_shiny : pokemonRes.data.sprites.front_default,
-                height: pokemonRes.data.height, weight: pokemonRes.data.weight,
-                types: typesWithKoreanNames,
-                abilities: abilitiesResponses.map((res, i) => ({ ability: { name: pokemonRes.data.abilities[i].ability.name, koreanName: findKoreanName(res.data, pokemonRes.data.abilities[i].ability.name) }})),
-                cryUrl: cryUrl,
-                weaknesses: weaknesses,
+                koreanName: findKoreanName(speciesRes.data, id),
+                forms: forms,
             };
             setSelectedPokemon(details);
             setIsSidebarOpen(true);
@@ -146,6 +129,10 @@ function App() {
         ),
     }), [isShiny]);
 
+    const edgeTypes = useMemo(() => ({
+        custom: CustomEdge,
+    }), []);
+
     const handleSearch = async (pokemonIdentifier?: string) => {
         const searchInput = pokemonIdentifier || pokemonName;
         if (!searchInput) {
@@ -162,19 +149,24 @@ function App() {
             const evolutionResponse = await axios.get(evolutionChainUrl);
             const evolutionTree = parseEvolutionChain(evolutionResponse.data);
             const { nodes: initialNodes, edges: initialEdges } = createFlowElementsFromTree(evolutionTree);
-            const pokemonDataPromises = initialNodes.map(node => axios.get(`https://pokeapi.co/api/v2/pokemon/${node.id}`));
-            const pokemonDataResponses = await Promise.all(pokemonDataPromises);
-            const speciesPromises = pokemonDataResponses.map(res => axios.get(res.data.species.url));
-            const speciesResponses = await Promise.all(speciesPromises);
 
-            pokemonDataResponses.forEach((pokemonRes, index) => {
-                const details = {
-                    koreanName: findKoreanName(speciesResponses[index].data, pokemonRes.data.name),
+            const pokemonDetailsPromises = initialNodes.map(async (node) => {
+                const speciesForNodeRes = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${node.id}`);
+                const defaultFormName = speciesForNodeRes.data.varieties.find((v: any) => v.is_default)?.pokemon.name || node.id;
+                const pokemonRes = await axios.get(`https://pokeapi.co/api/v2/pokemon/${defaultFormName}`);
+                return {
+                    speciesName: node.id,
+                    koreanName: findKoreanName(speciesForNodeRes.data, pokemonRes.data.name),
                     defaultImageUrl: pokemonRes.data.sprites.front_default,
                     shinyImageUrl: pokemonRes.data.sprites.front_shiny,
                     types: pokemonRes.data.types,
                 };
-                const targetNode = initialNodes.find(n => n.id === pokemonRes.data.name);
+            });
+
+            const allPokemonDetails = await Promise.all(pokemonDetailsPromises);
+
+            allPokemonDetails.forEach((details) => {
+                const targetNode = initialNodes.find(n => n.id === details.speciesName);
                 if(targetNode) {
                     targetNode.data.label = details.koreanName;
                     targetNode.data.defaultImageUrl = details.defaultImageUrl;
@@ -218,7 +210,7 @@ function App() {
     return (
         <div style={{ width: '100vw', height: '100vh' }}>
             <div className="search-container">
-                <h1>포켓몬 진화 과정 시각화</h1>
+                <h1>포켓몬스터 진화 살펴보기</h1>
                 <form className="search-box" onSubmit={handleSubmit}>
                     <input
                         className="search-input"
@@ -236,7 +228,7 @@ function App() {
                     </button>
                 </form>
                 <div className="shiny-toggle-container">
-                    <span>이로치 모드 </span>
+                    <span>이로치 모드</span>
                     <label className="switch">
                         <input type="checkbox" checked={isShiny} onChange={() => setIsShiny(!isShiny)} />
                         <span className="slider"></span>
@@ -244,22 +236,26 @@ function App() {
                 </div>
             </div>
 
-            {nodes.length === 0 && !isLoading ? (
-                <WelcomeScreen />
-            ) : (
-                <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
-                    <MiniMap />
-                    <Controls />
-                    <Background />
-                </ReactFlow>
-            )}
+            <ReactFlowProvider>
+                {nodes.length === 0 && !isLoading ? (
+                    <WelcomeScreen />
+                ) : (
+                    <FlowCanvas
+                        nodes={nodes}
+                        edges={edges}
+                        nodeTypes={nodeTypes}
+                        edgeTypes={edgeTypes}
+                    />
+                )}
+            </ReactFlowProvider>
 
             <AnimatePresence>
                 {isSidebarOpen && (
                     <Sidebar
-                        pokemon={selectedPokemon}
+                        initialPokemon={selectedPokemon}
                         isOpen={isSidebarOpen}
                         onClose={() => setIsSidebarOpen(false)}
+                        isShiny={isShiny}
                     />
                 )}
             </AnimatePresence>
