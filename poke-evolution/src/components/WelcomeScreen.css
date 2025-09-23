@@ -1,0 +1,25 @@
+.welcome-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    text-align: center;
+    color: #a0a0a0;
+}
+.pokeball-icon {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+.welcome-container h2 {
+    font-size: 2.5em;
+    margin: 0 0 10px 0;
+    color: #555;
+}
+.welcome-container p {
+    font-size: 1.2em;
+    margin: 0;
+}

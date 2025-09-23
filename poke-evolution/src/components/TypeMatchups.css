@@ -1,0 +1,27 @@
+.matchups-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 15px;
+    align-items: center;
+}
+
+.multiplier {
+    font-weight: bold;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.types-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.type-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+}
