@@ -87,3 +87,36 @@
     border-radius: 8px;
     border: 1px solid #ddd;
 }
+
+.add-team-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ffcb05;
+    color: #2e6db4;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.add-team-btn:hover { background-color: #e6b704; }
+.add-team-btn:disabled {
+    background-color: #e9ecef;
+    color: #aaa;
+    cursor: not-allowed;
+}
+.flavor-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+    padding-top: 5px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.dark .flavor-text {
+    color: #bbb;
+    border-top-color: #444;
+}

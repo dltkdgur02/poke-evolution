@@ -59,6 +59,7 @@ interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
     isShiny: boolean;
+    flavorText: string;
 }
 
 function Sidebar({ initialPokemon, isOpen, onClose, isShiny }: SidebarProps) {
@@ -79,6 +80,12 @@ function Sidebar({ initialPokemon, isOpen, onClose, isShiny }: SidebarProps) {
             const typesWithKoreanNames = await Promise.all(typeNamesPromises);
             const abilitiesPromises = pokemonRes.data.abilities.map((a: any) => axios.get(a.ability.url));
             const abilitiesResponses = await Promise.all(abilitiesPromises);
+            const koreanFlavorTextEntry = speciesRes.data.flavor_text_entries
+                .reverse() // 최신 버전의 설명이 보통 뒤에 있으므로 배열을 뒤집음
+                .find((entry: any) => entry.language.name === 'ko');
+            const flavorText = koreanFlavorTextEntry
+                ? koreanFlavorTextEntry.flavor_text.replace(/\s+/g, ' ') // 줄바꿈 문자를 공백으로 변경
+                : '도감 설명을 찾을 수 없습니다.';
             setCurrentFormDetails({
                 koreanName: findKoreanName(speciesRes.data, pokemonRes.data.name),
                 imageUrl: isShiny ? pokemonRes.data.sprites.front_shiny : pokemonRes.data.sprites.front_default,
@@ -90,6 +97,7 @@ function Sidebar({ initialPokemon, isOpen, onClose, isShiny }: SidebarProps) {
                 matchups: matchups,
                 weaknesses: weaknesses,
                 sprites: pokemonRes.data.sprites,
+                flavorText: flavorText,
             });
         } catch (error) {
             console.error("Failed to fetch form details", error);
@@ -162,6 +170,10 @@ function Sidebar({ initialPokemon, isOpen, onClose, isShiny }: SidebarProps) {
                                 </div>
                                 <div className="info-section"><h3>특성</h3>{currentFormDetails.abilities.map(({ ability }) => (<div key={ability.name} className="info-item"><span>{ability.koreanName}</span></div>))}</div>
                                 <div className="info-section"><h3>신체 정보</h3><div className="info-item"><span>키</span><span>{currentFormDetails.height / 10} m</span></div><div className="info-item"><span>몸무게</span><span>{currentFormDetails.weight / 10} kg</span></div></div>
+                                <div className="info-section">
+                                    <h3>도감 설명</h3>
+                                    <p className="flavor-text">{currentFormDetails.flavorText}</p>
+                                </div>
                             </div>
                         )}
                         {activeTab === 'stats' && (

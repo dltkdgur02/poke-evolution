@@ -6,13 +6,24 @@
     --primary-color: #1DB954;
     --card-bg: #ffffff;
     --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --border-color: #eee;
 }
+
+/* --- 🔽 이 부분을 수정합니다 🔽 --- */
+body.dark {
+    --background-color: #1a1a1a; /* 더 어두운 배경 */
+    --text-color: #f1f1f1;       /* 더 밝은 텍스트 */
+    --primary-color: #1DB954;
+    --card-bg: #2a2a2a;         /* 카드 배경도 살짝 밝게 */
+    --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    --border-color: #555;         /* 테두리 색상 변경 */
+}
+/* ---------------------------------- */
 
 body {
     margin: 0;
     font-family: 'Noto Sans KR', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     background-color: var(--background-color);
     color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
 }

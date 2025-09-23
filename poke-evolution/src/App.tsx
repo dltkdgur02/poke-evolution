@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import { parseEvolutionChain, type EvolutionTreeNode } from './utils';
 import { ReactFlowProvider, type NodeProps } from 'reactflow';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import 'reactflow/dist/style.css';
 import PokemonNode from './components/PokemonNode';
 import Sidebar from './components/Sidebar';
@@ -10,6 +10,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import FlowCanvas from './components/FlowCanvas';
 import CustomEdge from './components/CustomEdge';
 import koreanNameMap from './koreanNameMap.json';
+import GuessingGame from './components/GuessingGame';
 import './App.css';
 import dagre from 'dagre';
 
@@ -77,6 +78,17 @@ function App() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [selectedPokemon, setSelectedPokemon] = useState<PokemonDetails | null>(null);
     const [isShiny, setIsShiny] = useState(false);
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+    const [isQuizOpen, setIsQuizOpen] = useState(false);
+
+    useEffect(() => {
+        document.body.className = theme;
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
 
     useEffect(() => {
         setNodes(prevNodes => prevNodes.map(node => ({
@@ -225,10 +237,20 @@ function App() {
                         오늘의 포켓몬은?
                     </button>
                 </form>
+                <button className="quiz-button" onClick={() => setIsQuizOpen(true)}>
+                    도감 퀴즈!
+                </button>
                 <div className="shiny-toggle-container">
                     <span>이로치 모드</span>
                     <label className="switch">
                         <input type="checkbox" checked={isShiny} onChange={() => setIsShiny(!isShiny)} />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="theme-toggle-container">
+                    <span>{theme === 'light' ? '☀️ 라이트' : '🌙 다크'} 모드</span>
+                    <label className="switch">
+                        <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} />
                         <span className="slider"></span>
                     </label>
                 </div>
@@ -255,6 +277,24 @@ function App() {
                         onClose={() => setIsSidebarOpen(false)}
                         isShiny={isShiny}
                     />
+                )}
+                {isQuizOpen && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="modal-content"
+                            initial={{ scale: 0.7, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.7, opacity: 0 }}
+                        >
+                            <button className="modal-close-btn" onClick={() => setIsQuizOpen(false)}>&times;</button>
+                            <GuessingGame />
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
