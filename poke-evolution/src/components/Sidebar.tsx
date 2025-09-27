@@ -53,13 +53,13 @@ type FormDetails = {
     matchups: Matchups;
     weaknesses: string[];
     sprites: any;
+    flavorText: string;
 };
 interface SidebarProps {
     initialPokemon: InitialPokemonDetails | null;
     isOpen: boolean;
     onClose: () => void;
     isShiny: boolean;
-    flavorText: string;
 }
 
 function Sidebar({ initialPokemon, isOpen, onClose, isShiny }: SidebarProps) {

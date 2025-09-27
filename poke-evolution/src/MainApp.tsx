@@ -344,6 +344,7 @@ function MainApp() {
                         isOpen={isSidebarOpen}
                         onClose={() => setIsSidebarOpen(false)}
                         isShiny={isShiny}
+
                     />
                 )}
                 {isQuizOpen && (
