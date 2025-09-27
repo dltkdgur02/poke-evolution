@@ -11,10 +11,13 @@ import FlowCanvas from './components/FlowCanvas';
 import CustomEdge from './components/CustomEdge';
 import koreanNameMap from './koreanNameMap.json';
 import GuessingGame from './components/GuessingGame';
-import './App.css';
+import { auth, db } from './firebase';
+import { signOut, updateProfile } from 'firebase/auth';
+import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore";
+import './MainApp.css';
 import dagre from 'dagre';
 
-// --- 헬퍼 함수들을 App 컴포넌트 밖으로 이동하여 정리 ---
+// --- 헬퍼 함수들을 MainApp 컴포넌트 밖으로 이동하여 정리 ---
 const findKoreanName = (speciesData: any, fallbackName: string) => {
     return speciesData.names.find((n: any) => n.language.name === 'ko')?.name || fallbackName;
 };
@@ -70,7 +73,9 @@ const createFlowElementsFromTree = (treeNode: EvolutionTreeNode) => {
     return { nodes, edges };
 };
 
-function App() {
+function MainApp() {
+
+    const user = auth.currentUser;
     const [pokemonName, setPokemonName] = useState('');
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
@@ -80,11 +85,68 @@ function App() {
     const [isShiny, setIsShiny] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [isQuizOpen, setIsQuizOpen] = useState(false);
+    const handleLogout = () => {
+        signOut(auth);
+    };
+    const [nickname, setNickname] = useState('');
+    const [isRankingOpen, setIsRankingOpen] = useState(false);
+    const [rankings, setRankings] = useState<any[]>([]);
 
     useEffect(() => {
         document.body.className = theme;
         localStorage.setItem('theme', theme);
     }, [theme]);
+
+    const handleNicknameUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (user && nickname) {
+            try {
+                await updateProfile(user, { displayName: nickname });
+                // 강제로 페이지를 새로고침하여 닉네임 변경을 반영합니다.
+                window.location.reload();
+            } catch (error) {
+                console.error("Error updating profile:", error);
+            }
+        }
+    };
+
+    const handleGameComplete = async (score: number) => {
+        if (user) {
+            try {
+                await addDoc(collection(db, "rankings"), {
+                    username: user.displayName || user.email,
+                    score: score,
+                    timestamp: serverTimestamp(),
+                });
+            } catch (error) {
+                console.error("Error adding document: ", error);
+            }
+        }
+        setIsQuizOpen(false);
+        showRankings();
+    };;
+
+    const showRankings = async () => {
+        const q = query(collection(db, "rankings"), orderBy("score", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+        const fetchedRankings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setRankings(fetchedRankings);
+        setIsRankingOpen(true);
+    };
+
+    if (user && !user.displayName) {
+        return (
+            <div className="auth-container">
+                <div className="auth-box">
+                    <h2>환영합니다! 사용할 닉네임을 정해주세요.</h2>
+                    <form onSubmit={handleNicknameUpdate} className="auth-form">
+                        <input className="auth-input" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="닉네임" required />
+                        <button type="submit" className="auth-button">닉네임 설정</button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
 
     const toggleTheme = () => {
         setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -219,6 +281,12 @@ function App() {
 
     return (
         <div style={{ width: '100vw', height: '100vh' }}>
+
+            <div className="user-info-container">
+                <p>{auth.currentUser?.displayName || auth.currentUser?.email}님, 환영합니다!</p>
+                <button className="logout-button" onClick={handleLogout}>로그아웃</button>
+            </div>
+
             <div className="search-container">
                 <h1>포켓몬스터 진화 살펴보기</h1>
                 <form className="search-box" onSubmit={handleSubmit}>
@@ -292,7 +360,20 @@ function App() {
                             exit={{ scale: 0.7, opacity: 0 }}
                         >
                             <button className="modal-close-btn" onClick={() => setIsQuizOpen(false)}>&times;</button>
-                            <GuessingGame />
+                            <GuessingGame onGameComplete={handleGameComplete} />
+                        </motion.div>
+
+                    </motion.div>
+
+                )}
+                {isRankingOpen && (
+                    <motion.div className="modal-overlay" /* ... */ >
+                        <motion.div className="modal-content" /* ... */ >
+                            <button className="modal-close-btn" onClick={() => setIsRankingOpen(false)}>&times;</button>
+                            <h2>🏆 명예의 전당 🏆</h2>
+                            <ol>
+                                {rankings.map((r, i) => <li key={r.id}>{i + 1}. {r.username}: {r.score}점</li>)}
+                            </ol>
                         </motion.div>
                     </motion.div>
                 )}
@@ -301,4 +382,4 @@ function App() {
     );
 }
 
-export default App;
+export default MainApp;

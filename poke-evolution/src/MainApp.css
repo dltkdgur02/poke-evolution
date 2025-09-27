@@ -111,3 +111,37 @@ input:checked + .slider:before { transform: translateX(22px); }
     color: #aaa;
     cursor: pointer;
 }
+
+.user-info-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.user-info-container p {
+    margin: 0;
+    font-weight: bold;
+}
+
+.logout-button {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+    background: #d32f2f;
+}
