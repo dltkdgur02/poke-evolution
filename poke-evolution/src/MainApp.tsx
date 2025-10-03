@@ -5,6 +5,7 @@ import { ReactFlowProvider, type NodeProps } from 'reactflow';
 import { AnimatePresence, motion } from 'framer-motion';
 import 'reactflow/dist/style.css';
 import PokemonNode from './components/PokemonNode';
+import { useWindowSize } from './hooks/useWindowSize';
 import Sidebar from './components/Sidebar';
 import WelcomeScreen from './components/WelcomeScreen';
 import FlowCanvas from './components/FlowCanvas';
@@ -85,6 +86,8 @@ function MainApp() {
     const [isShiny, setIsShiny] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [isQuizOpen, setIsQuizOpen] = useState(false);
+    const { width } = useWindowSize(); // 현재 화면 너비 가져오기
+    const layoutDirection = width <= 768 ? 'TB' : 'LR';
     const handleLogout = () => {
         signOut(auth);
     };
@@ -248,7 +251,7 @@ function MainApp() {
                 }
             });
 
-            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges);
+            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges, layoutDirection);
             setNodes([...layoutedNodes]);
             setEdges([...layoutedEdges]);
         } catch (error) {
